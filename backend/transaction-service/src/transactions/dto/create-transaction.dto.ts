@@ -1,4 +1,7 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
+
+const PAYMENT_METHODS = ['UPI', 'CARD', 'QR', 'SMS_LINK'] as const;
+type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export class CreateTransactionDto {
   @IsString()
@@ -12,6 +15,6 @@ export class CreateTransactionDto {
   currency?: string;
 
   @IsOptional()
-  @IsString()
-  method?: string;
+  @IsIn(PAYMENT_METHODS)
+  method?: PaymentMethod;
 }
