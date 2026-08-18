@@ -37,7 +37,12 @@ services:
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
       ALLOW_PLAINTEXT_LISTENER: "yes"
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      # kafka-topics.sh is a JVM CLI with ~10s of its own startup overhead --
+      # too slow to use as the check itself. A plain TCP probe on the broker
+      # port is enough here: it gates dependents until Kafka is at least
+      # accepting connections, and restart:on-failure on the consumers
+      # absorbs the remaining topic-auto-create race.
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9092'"]
       interval: 5s
       timeout: 5s
       retries: 20
