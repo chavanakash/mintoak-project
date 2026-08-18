@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: localhost:5001/frontend:latest
+          image: localhost:5051/frontend:latest
           ports: [{ containerPort: 80 }]
           readinessProbe:
             httpGet: { path: /, port: 80 }

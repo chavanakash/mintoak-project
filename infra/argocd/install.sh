@@ -4,7 +4,10 @@
 set -euo pipefail
 
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# --server-side: the ApplicationSet CRD is too large for client-side apply's
+# last-applied-configuration annotation (262144 byte cap) and errors out otherwise.
+kubectl apply -n argocd --server-side --force-conflicts \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 echo "Waiting for ArgoCD server to be ready..."
 kubectl wait --namespace argocd \

@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    IMAGE = "localhost:5001/merchant-service"
+    IMAGE = "localhost:5051/merchant-service"
     TAG = "${env.GIT_COMMIT.take(7)}"
   }
   stages {

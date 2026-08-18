@@ -10,7 +10,7 @@ services:
       - /usr/bin/docker:/usr/bin/docker:ro
     environment:
       JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
-    network_mode: "host" # so `localhost:5001` (the kind-registry) is reachable from inside Jenkins the same as from your shell
+    network_mode: "host" # so `localhost:5051` (the kind-registry) is reachable from inside Jenkins the same as from your shell
 
 volumes:
   jenkins_home:

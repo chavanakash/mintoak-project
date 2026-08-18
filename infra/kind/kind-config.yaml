@@ -19,8 +19,8 @@ nodes:
         hostPort: 8443
         protocol: TCP
 containerdConfigPatches:
-  # point the cluster's containerd at the local registry so `localhost:5001/x`
+  # point the cluster's containerd at the local registry so `localhost:5051/x`
   # image refs resolve inside kind nodes without needing a real registry
   - |-
-    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5001"]
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5051"]
       endpoint = ["http://kind-registry:5000"]

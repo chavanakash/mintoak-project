@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REGISTRY_NAME="kind-registry"
-REGISTRY_PORT="5001"
+REGISTRY_PORT="5051"
 
 # 1. local registry container, reused across runs if it already exists
 if [ "$(docker inspect -f '{{.State.Running}}' "${REGISTRY_NAME}" 2>/dev/null || true)" != 'true' ]; then

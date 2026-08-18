@@ -27,7 +27,7 @@ service directory changes) using the `Jenkinsfile` already committed in that
 service's directory. Each Jenkinsfile:
 1. installs deps / lints
 2. builds the Docker image
-3. pushes it to the local registry at `localhost:5001`
+3. pushes it to the local registry at `localhost:5051`
 4. bumps the image tag in `infra/k8s/base/<service>/deployment.yaml` and
    pushes that commit back to `main`
 

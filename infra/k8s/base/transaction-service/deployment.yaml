@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: transaction-service
-          image: localhost:5001/transaction-service:latest
+          image: localhost:5051/transaction-service:latest
           ports: [{ containerPort: 3002 }]
           env:
             - { name: PORT, value: "3002" }

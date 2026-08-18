@@ -17,7 +17,7 @@ local filesystem.
 ```
 
 Flow once installed:
-1. Jenkins builds an image, pushes it to `localhost:5001`, and commits the
+1. Jenkins builds an image, pushes it to `localhost:5051`, and commits the
    new tag into `infra/k8s/base/<service>.yaml` on `main`.
 2. ArgoCD's controller polls the git repo (default every 3 min, or
    immediately if you set up a webhook) and notices the manifest changed.

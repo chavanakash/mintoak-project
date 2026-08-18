@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    IMAGE = "localhost:5001/notification-service"
+    IMAGE = "localhost:5051/notification-service"
     TAG = "${env.GIT_COMMIT.take(7)}"
   }
   stages {
