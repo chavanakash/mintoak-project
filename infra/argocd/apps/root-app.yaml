@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mintoak-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/chavanakash/mintoak-project.git # <-- change me
+    targetRevision: main
+    path: infra/argocd/apps
+    directory:
+      exclude: root-app.yaml
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

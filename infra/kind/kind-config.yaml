@@ -1,0 +1,26 @@
+# kind cluster with the ingress-ready port mappings and a node label
+# ingress-nginx's controller uses to schedule onto.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: mintoak
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
+containerdConfigPatches:
+  # point the cluster's containerd at the local registry so `localhost:5001/x`
+  # image refs resolve inside kind nodes without needing a real registry
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5001"]
+      endpoint = ["http://kind-registry:5000"]

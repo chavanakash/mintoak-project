@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: mintoak
+spec:
+  replicas: 1 # single consumer group member; bump alongside Kafka partitions to scale
+  selector:
+    matchLabels: { app: notification-service }
+  template:
+    metadata:
+      labels: { app: notification-service }
+    spec:
+      containers:
+        - name: notification-service
+          image: localhost:5001/notification-service:latest
+          ports: [{ containerPort: 3003 }]
+          env:
+            - { name: KAFKA_BROKER, value: "kafka:9092" }
+            - { name: MONGO_URL, value: "mongodb://mongo:27017/mintoak_analytics" }
+            - { name: REDIS_URL, value: "redis://redis:6379" }
+          readinessProbe:
+            httpGet: { path: /health, port: 3003 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: mintoak
+spec:
+  selector: { app: notification-service }
+  ports: [{ port: 3003, targetPort: 3003 }]

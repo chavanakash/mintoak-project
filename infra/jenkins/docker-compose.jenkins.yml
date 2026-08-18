@@ -1,0 +1,16 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8090:8080" # UI
+      - "50000:50000" # agent protocol
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock # lets Jenkins build/push images via the host's docker daemon
+      - /usr/bin/docker:/usr/bin/docker:ro
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+    network_mode: "host" # so `localhost:5001` (the kind-registry) is reachable from inside Jenkins the same as from your shell
+
+volumes:
+  jenkins_home:

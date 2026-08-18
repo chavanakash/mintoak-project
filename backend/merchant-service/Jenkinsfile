@@ -1,0 +1,39 @@
+pipeline {
+  agent any
+  environment {
+    IMAGE = "localhost:5001/merchant-service"
+    TAG = "${env.GIT_COMMIT.take(7)}"
+  }
+  stages {
+    stage('Install & Test') {
+      steps {
+        sh 'npm install'
+        sh 'npm run lint || true'
+      }
+    }
+    stage('Build Image') {
+      steps {
+        sh "docker build -t ${IMAGE}:${TAG} -t ${IMAGE}:latest ."
+      }
+    }
+    stage('Push to local registry') {
+      steps {
+        sh "docker push ${IMAGE}:${TAG}"
+        sh "docker push ${IMAGE}:latest"
+      }
+    }
+    stage('Bump image tag in git (GitOps)') {
+      steps {
+        sh """
+          cd \$WORKSPACE
+          sed -i.bak "s#${IMAGE}:.*#${IMAGE}:${TAG}#" infra/k8s/base/merchant-service/deployment.yaml
+          git config user.email "jenkins@mintoak-project.local"
+          git config user.name "jenkins"
+          git add infra/k8s/base/merchant-service/deployment.yaml
+          git commit -m "ci: bump merchant-service image to ${TAG}" || echo "nothing to commit"
+          git push origin HEAD:main
+        """
+      }
+    }
+  }
+}
