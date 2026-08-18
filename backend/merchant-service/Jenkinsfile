@@ -1,7 +1,13 @@
 pipeline {
   agent any
   environment {
-    IMAGE = "localhost:5051/merchant-service"
+    SERVICE = "merchant-service"
+    // PUSH_IMAGE is what Jenkins itself pushes to (Jenkins and the registry
+    // share the `kind` docker network). DEPLOY_IMAGE is what the cluster
+    // pulls from (kind's containerd mirrors localhost:5051 -> the same
+    // registry, per infra/kind/kind-config.yaml). Same registry, two paths in.
+    PUSH_IMAGE = "kind-registry:5000/${SERVICE}"
+    DEPLOY_IMAGE = "localhost:5051/${SERVICE}"
     TAG = "${env.GIT_COMMIT.take(7)}"
   }
   stages {
@@ -13,26 +19,28 @@ pipeline {
     }
     stage('Build Image') {
       steps {
-        sh "docker build -t ${IMAGE}:${TAG} -t ${IMAGE}:latest ."
+        sh "docker build -t ${PUSH_IMAGE}:${TAG} -t ${PUSH_IMAGE}:latest ."
       }
     }
     stage('Push to local registry') {
       steps {
-        sh "docker push ${IMAGE}:${TAG}"
-        sh "docker push ${IMAGE}:latest"
+        sh "docker push ${PUSH_IMAGE}:${TAG}"
+        sh "docker push ${PUSH_IMAGE}:latest"
       }
     }
     stage('Bump image tag in git (GitOps)') {
       steps {
-        sh """
-          cd \$WORKSPACE
-          sed -i.bak "s#${IMAGE}:.*#${IMAGE}:${TAG}#" infra/k8s/base/merchant-service/deployment.yaml
-          git config user.email "jenkins@mintoak-project.local"
-          git config user.name "jenkins"
-          git add infra/k8s/base/merchant-service/deployment.yaml
-          git commit -m "ci: bump merchant-service image to ${TAG}" || echo "nothing to commit"
-          git push origin HEAD:main
-        """
+        withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+          sh """
+            cd \$WORKSPACE
+            sed -i.bak "s#${DEPLOY_IMAGE}:.*#${DEPLOY_IMAGE}:${TAG}#" infra/k8s/base/merchant-service/deployment.yaml
+            git config user.email "jenkins@mintoak-project.local"
+            git config user.name "jenkins"
+            git add infra/k8s/base/merchant-service/deployment.yaml
+            git commit -m "ci: bump merchant-service image to ${TAG}" || echo "nothing to commit"
+            git push https://${GIT_USER}:${GIT_TOKEN}@github.com/chavanakash/mintoak-project.git HEAD:main
+          """
+        }
       }
     }
   }

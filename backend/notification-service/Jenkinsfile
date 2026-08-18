@@ -1,7 +1,9 @@
 pipeline {
   agent any
   environment {
-    IMAGE = "localhost:5051/notification-service"
+    SERVICE = "notification-service"
+    PUSH_IMAGE = "kind-registry:5000/${SERVICE}"
+    DEPLOY_IMAGE = "localhost:5051/${SERVICE}"
     TAG = "${env.GIT_COMMIT.take(7)}"
   }
   stages {
@@ -9,25 +11,27 @@ pipeline {
       steps { sh 'npm install' }
     }
     stage('Build Image') {
-      steps { sh "docker build -t ${IMAGE}:${TAG} -t ${IMAGE}:latest ." }
+      steps { sh "docker build -t ${PUSH_IMAGE}:${TAG} -t ${PUSH_IMAGE}:latest ." }
     }
     stage('Push to local registry') {
       steps {
-        sh "docker push ${IMAGE}:${TAG}"
-        sh "docker push ${IMAGE}:latest"
+        sh "docker push ${PUSH_IMAGE}:${TAG}"
+        sh "docker push ${PUSH_IMAGE}:latest"
       }
     }
     stage('Bump image tag in git (GitOps)') {
       steps {
-        sh """
-          cd \$WORKSPACE
-          sed -i.bak "s#${IMAGE}:.*#${IMAGE}:${TAG}#" infra/k8s/base/notification-service/deployment.yaml
-          git config user.email "jenkins@mintoak-project.local"
-          git config user.name "jenkins"
-          git add infra/k8s/base/notification-service/deployment.yaml
-          git commit -m "ci: bump notification-service image to ${TAG}" || echo "nothing to commit"
-          git push origin HEAD:main
-        """
+        withCredentials([usernamePassword(credentialsId: 'github-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+          sh """
+            cd \$WORKSPACE
+            sed -i.bak "s#${DEPLOY_IMAGE}:.*#${DEPLOY_IMAGE}:${TAG}#" infra/k8s/base/notification-service/deployment.yaml
+            git config user.email "jenkins@mintoak-project.local"
+            git config user.name "jenkins"
+            git add infra/k8s/base/notification-service/deployment.yaml
+            git commit -m "ci: bump notification-service image to ${TAG}" || echo "nothing to commit"
+            git push https://${GIT_USER}:${GIT_TOKEN}@github.com/chavanakash/mintoak-project.git HEAD:main
+          """
+        }
       }
     }
   }

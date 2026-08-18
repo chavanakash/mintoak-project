@@ -1,0 +1,85 @@
+jenkins:
+  systemMessage: "mintoak-project CI -- configured entirely via JCasC, not clicked through the UI"
+  numExecutors: 4
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-pat"
+              username: "chavanakash"
+              password: "${GITHUB_TOKEN}"
+              description: "GitHub PAT used only to push image-tag bump commits back to main"
+
+jobs:
+  - script: >
+      pipelineJob('merchant-service') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/chavanakash/mintoak-project.git') }
+                branch('*/main')
+              }
+            }
+            scriptPath('backend/merchant-service/Jenkinsfile')
+          }
+        }
+        triggers { scm('H/2 * * * *') }
+      }
+  - script: >
+      pipelineJob('transaction-service') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/chavanakash/mintoak-project.git') }
+                branch('*/main')
+              }
+            }
+            scriptPath('backend/transaction-service/Jenkinsfile')
+          }
+        }
+        triggers { scm('H/2 * * * *') }
+      }
+  - script: >
+      pipelineJob('notification-service') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/chavanakash/mintoak-project.git') }
+                branch('*/main')
+              }
+            }
+            scriptPath('backend/notification-service/Jenkinsfile')
+          }
+        }
+        triggers { scm('H/2 * * * *') }
+      }
+  - script: >
+      pipelineJob('frontend') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/chavanakash/mintoak-project.git') }
+                branch('*/main')
+              }
+            }
+            scriptPath('frontend/Jenkinsfile')
+          }
+        }
+        triggers { scm('H/2 * * * *') }
+      }

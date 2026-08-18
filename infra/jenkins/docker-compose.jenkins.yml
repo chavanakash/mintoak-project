@@ -1,16 +1,21 @@
 services:
   jenkins:
-    image: jenkins/jenkins:lts
+    build: .
     ports:
       - "8090:8080" # UI
       - "50000:50000" # agent protocol
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock # lets Jenkins build/push images via the host's docker daemon
-      - /usr/bin/docker:/usr/bin/docker:ro
+    networks:
+      - kind # same network as kind-registry, so `kind-registry:5000` resolves directly -- no host-networking mode needed
     environment:
-      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
-    network_mode: "host" # so `localhost:5051` (the kind-registry) is reachable from inside Jenkins the same as from your shell
+      GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in infra/jenkins/.env -- see .env.example}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?Set JENKINS_ADMIN_PASSWORD in infra/jenkins/.env -- see .env.example}
+
+networks:
+  kind:
+    external: true # created by `kind create cluster`; run infra/kind/setup-cluster.sh first
 
 volumes:
   jenkins_home:
