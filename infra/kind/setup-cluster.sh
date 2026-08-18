@@ -40,5 +40,16 @@ kubectl wait --namespace ingress-nginx \
   --selector=app.kubernetes.io/component=controller \
   --timeout=120s
 
+# 6. metrics-server, so the HPAs on merchant-service/transaction-service can
+# actually read CPU usage. kind's kubelet certs aren't signed for the way
+# metrics-server verifies by default, hence --kubelet-insecure-tls -- fine
+# for a local cluster, never do this against a real one.
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type=json \
+  -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+kubectl wait --namespace kube-system \
+  --for=condition=available deployment/metrics-server \
+  --timeout=120s
+
 echo "Cluster ready. Ingress is reachable at http://localhost:8080"
 echo "Push images as: docker push localhost:${REGISTRY_PORT}/<service>:<tag>"
