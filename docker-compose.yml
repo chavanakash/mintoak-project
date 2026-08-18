@@ -36,9 +36,15 @@ services:
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
       ALLOW_PLAINTEXT_LISTENER: "yes"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   merchant-service:
     build: ./backend/merchant-service
+    restart: on-failure
     ports: ["3001:3001"]
     environment:
       DB_HOST: postgres
@@ -53,6 +59,7 @@ services:
 
   transaction-service:
     build: ./backend/transaction-service
+    restart: on-failure
     ports: ["3002:3002"]
     environment:
       DB_HOST: postgres
@@ -66,18 +73,22 @@ services:
       postgres:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
 
   notification-service:
     build: ./backend/notification-service
+    restart: on-failure
     environment:
       KAFKA_BROKER: kafka:9092
       MONGO_URL: mongodb://mongo:27017/mintoak_analytics
       REDIS_URL: redis://redis:6379
     depends_on:
-      - kafka
-      - mongo
-      - redis
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
 
   frontend:
     build:
@@ -85,6 +96,7 @@ services:
       args:
         VITE_MERCHANT_API: http://localhost:3001/merchants
         VITE_TRANSACTION_API: http://localhost:3002/transactions
+    restart: on-failure
     ports: ["5173:80"]
     depends_on:
       - merchant-service
